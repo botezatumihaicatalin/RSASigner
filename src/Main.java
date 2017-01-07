@@ -1,30 +1,37 @@
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
 
 import core.RSACertificateGenerator;
+import core.RSASigner;
 
 public class Main {
-
+	
 	public static void main(String[] args) {
 		try {
 			RSACertificateGenerator gen = new RSACertificateGenerator();
-			gen.generateToDisk("C:\\Users\\botezatu\\Desktop\\Mihai", "Mihai-Botezatu");
-			PublicKey pub1 = gen.getPublicKey();
-			gen.loadFromDisk("C:\\Users\\botezatu\\Desktop\\Mihai", "Mihai-Botezatu");
-			PublicKey pub2 = gen.getPublicKey();
-			System.out.println("Done");
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			// Alice wants to send a message to Bob.
+			gen.generate();
+			PublicKey alicePublic = gen.getPublicKey();
+			PrivateKey alicePrivate = gen.getPrivateKey();
+			
+			gen.generate();
+			PublicKey bobPublic = gen.getPublicKey();
+			PrivateKey bobPrivate = gen.getPrivateKey();
+			
+			RSASigner signer = new RSASigner();
+			signer.initSign(alicePrivate, bobPublic);
+			signer.update("My name is what? My name is who".getBytes());
+			byte[] signed = signer.sign();
+			
+			signer.initVerify(bobPrivate, alicePublic);
+			signer.update(signed);
+			
+			byte[] unsigned = signer.verify();
+			System.out.println(new String(unsigned));
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
 		}
-		
-		
 	}
 
 }

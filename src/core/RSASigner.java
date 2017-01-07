@@ -3,76 +3,114 @@ package core;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.SignatureException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-public class RSASigner implements Signer {
+public class RSASigner extends Signer {
 	
-	private final Cipher cipher;
-	private final PublicKey publicKey;
-    private final PrivateKey privateKey;
+	private final Cipher rsaCipher;
+	private final MessageDigest sha1Digest;
 	
 	public RSASigner() throws NoSuchAlgorithmException, NoSuchPaddingException {
-		cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");	
-		
-		KeyPairGenerator keysGenerator = KeyPairGenerator.getInstance("RSA");
-        keysGenerator.initialize(1024);
-         
-        KeyPair keys = keysGenerator.generateKeyPair();
-        publicKey = keys.getPublic();
-        privateKey = keys.getPrivate();
-	}
-	 
-	private void encrypt(InputStream iStream, OutputStream oStream, Key key) throws IOException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-		cipher.init(Cipher.ENCRYPT_MODE, key);
-        byte buffer[] = new byte[117];
-        int readed;
-         
-        while ((readed = iStream.read(buffer)) != -1) {
-            byte readedBlock[] = new byte[readed];
-            System.arraycopy(buffer, 0, readedBlock, 0, readed);
-            byte encryptedBlock[] = cipher.doFinal(readedBlock);
-            oStream.write(encryptedBlock);
-        }
+		super();
+		this.rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+		this.sha1Digest = MessageDigest.getInstance("SHA1");
 	}
 	
-	private void decrypt(InputStream iStream, OutputStream oStream, Key key) throws IllegalBlockSizeException, BadPaddingException, IOException, InvalidKeyException {
-		cipher.init(Cipher.DECRYPT_MODE, key);
+	private byte[] encrypt(byte[] data, Key key) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException {
+		ByteArrayInputStream dataStream = new ByteArrayInputStream(data);
+		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+		rsaCipher.init(Cipher.ENCRYPT_MODE, key);
+		
+		byte buffer[] = new byte[117];
+        int readed;
+         
+        while ((readed = dataStream.read(buffer)) != -1) {
+            byte readedBlock[] = new byte[readed];
+            System.arraycopy(buffer, 0, readedBlock, 0, readed);
+            byte encryptedBlock[] = rsaCipher.doFinal(readedBlock);
+            outStream.write(encryptedBlock);
+        }
+		
+		return outStream.toByteArray();
+	}
+	
+	private byte[] decrypt(byte[] data, Key key) throws IOException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+		ByteArrayInputStream dataStream = new ByteArrayInputStream(data);
+		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+		
+		rsaCipher.init(Cipher.DECRYPT_MODE, key);
         byte buffer[] = new byte[128];
          
-        while (iStream.read(buffer) != -1) {
-            byte decryptedBlock[] = cipher.doFinal(buffer);
-            oStream.write(decryptedBlock);
+        while (dataStream.read(buffer) != -1) {
+            byte decryptedBlock[] = rsaCipher.doFinal(buffer);
+            outStream.write(decryptedBlock);
         }
-	}
-
-	@Override
-	public void generateSignature(InputStream iStream, OutputStream oStream) {
-		ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
-		try {
-			this.encrypt(iStream, byteOutputStream, publicKey);
-		}
-		catch(Exception er) {
-			System.out.println(er.getMessage());
-		}
-	}
-
-	@Override
-	public void verifySignature(InputStream isStream, OutputStream oStream) {
-		// TODO Auto-generated method stub
 		
+		return outStream.toByteArray();
 	}
-
+	
+	private byte[] hash(byte[] data) throws IOException {
+		return this.sha1Digest.digest(data);
+	}
+	
+	public byte[] concat(byte[] buf1, byte[] buf2) {
+		byte[] output = new byte[buf1.length + buf2.length];
+		System.arraycopy(buf1, 0, output, 0, buf1.length);
+		System.arraycopy(buf2, 0, output, buf1.length, buf2.length);
+		return output;
+	}
+	
+ 	public byte[] sign() throws SignatureException {
+ 		if (state != RSASigner.SIGN) {
+ 			throw new SignatureException("Need to call initSign before sign");
+ 		}
+		try {
+			byte[] first = this.encrypt(buffer, publicKey);
+			byte[] hash = this.hash(buffer);
+			byte[] second = this.concat(first, hash);
+			byte[] third = this.encrypt(second, privateKey);
+			return this.encrypt(third, publicKey);
+  		}
+		catch(Exception er) {
+			throw new SignatureException(er.getMessage());
+		}
+	}
+ 	
+ 	public byte[] verify() throws SignatureException {
+ 		if (state != RSASigner.VERIFY) {
+ 			throw new SignatureException("Need to call initVerify before verify");
+ 		}
+ 		try {
+ 			byte[] first = this.decrypt(buffer, privateKey);
+ 			byte[] second = this.decrypt(first, publicKey);
+ 			if (second.length < 20) {
+ 				throw new SignatureException("Can't find the hash.");
+ 			}
+ 			byte[] bufferHash = new byte[20];
+ 			System.arraycopy(second, second.length - 20, bufferHash, 0, 20);
+ 			
+ 			byte[] remaining = new byte[second.length - 20];
+ 			System.arraycopy(second, 0, remaining, 0, second.length - 20);
+ 			
+ 			byte[] plain = this.decrypt(remaining, this.privateKey);
+ 			byte[] plainHash = this.hash(plain);
+ 			if (!MessageDigest.isEqual(bufferHash, plainHash)) {
+ 				throw new SignatureException("Hashes don't match.");
+ 			}
+ 			return plain;
+ 			
+ 		}
+ 		catch(Exception er) {
+ 			throw new SignatureException(er.getMessage());
+ 		}
+ 	}
 }
