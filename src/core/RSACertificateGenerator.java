@@ -27,7 +27,7 @@ public class RSACertificateGenerator {
 		this.keyFactory = KeyFactory.getInstance("RSA");
 	}
 	
-	public void generate() throws NoSuchAlgorithmException {
+	public void generate() {
         this.keyPairGenerator.initialize(1024);
         KeyPair kp = this.keyPairGenerator.genKeyPair();
         publicKey = kp.getPublic();
@@ -61,18 +61,23 @@ public class RSACertificateGenerator {
 	}
 	
 	public void loadPrivateKeyFromDisk(String folder, String name) throws IOException, InvalidKeySpecException {
-		Path publicKeyPath = Paths.get(folder, name + ".priv");
-		FileInputStream inputStream = new FileInputStream(publicKeyPath.toString());
+		Path privateKeyPath = Paths.get(folder, name + ".priv");
+		FileInputStream inputStream = new FileInputStream(privateKeyPath.toString());
 		byte[] buffer = new byte[inputStream.available()];
 		inputStream.read(buffer);
 		inputStream.close();
 		PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(buffer);
-		publicKey = this.keyFactory.generatePublic(keySpec);
+		privateKey = this.keyFactory.generatePrivate(keySpec);
 	}
 	
 	public void saveToDisk(String folder, String name) throws IOException {
 		this.savePublicKeyToDisk(folder, name);
 		this.savePrivateKeyToDisk(folder, name);	
+	}
+	
+	public void generateToDisk(String folder, String name) throws IOException {
+		this.generate();
+		this.saveToDisk(folder, name);
 	}
 	
 	public void loadFromDisk(String folder, String name) throws InvalidKeySpecException, IOException {
