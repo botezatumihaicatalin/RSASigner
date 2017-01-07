@@ -61,7 +61,7 @@ public class RSACertificateGenerator {
 	}
 	
 	public void loadPrivateKeyFromDisk(String folder, String name) throws IOException, InvalidKeySpecException {
-		Path publicKeyPath = Paths.get(folder, name + ".pub");
+		Path publicKeyPath = Paths.get(folder, name + ".priv");
 		FileInputStream inputStream = new FileInputStream(publicKeyPath.toString());
 		byte[] buffer = new byte[inputStream.available()];
 		inputStream.read(buffer);
