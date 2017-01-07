@@ -21,7 +21,7 @@ public class Main {
 			
 			RSASigner signer = new RSASigner();
 			signer.initSign(alicePrivate, bobPublic);
-			signer.update("My name is what? My name is who".getBytes());
+			signer.update("My name is what? My name is who? My name is...".getBytes());
 			byte[] signed = signer.sign();
 			
 			signer.initVerify(bobPrivate, alicePublic);

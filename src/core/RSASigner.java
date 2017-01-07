@@ -62,13 +62,6 @@ public class RSASigner extends Signer {
 		return this.sha1Digest.digest(data);
 	}
 	
-	public byte[] concat(byte[] buf1, byte[] buf2) {
-		byte[] output = new byte[buf1.length + buf2.length];
-		System.arraycopy(buf1, 0, output, 0, buf1.length);
-		System.arraycopy(buf2, 0, output, buf1.length, buf2.length);
-		return output;
-	}
-	
  	public byte[] sign() throws SignatureException {
  		if (state != RSASigner.SIGN) {
  			throw new SignatureException("Need to call initSign before sign");
@@ -76,7 +69,7 @@ public class RSASigner extends Signer {
 		try {
 			byte[] first = this.encrypt(buffer, publicKey);
 			byte[] hash = this.hash(buffer);
-			byte[] second = this.concat(first, hash);
+			byte[] second = ArrayUtils.concat(first, hash);
 			byte[] third = this.encrypt(second, privateKey);
 			return this.encrypt(third, publicKey);
   		}
