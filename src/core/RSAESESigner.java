@@ -14,12 +14,12 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-public class RSASigner extends Signer {
+public class RSAESESigner extends Signer {
 
     private final Cipher        rsaCipher;
     private final MessageDigest sha1Digest;
 
-    public RSASigner() throws NoSuchAlgorithmException, NoSuchPaddingException {
+    public RSAESESigner() throws NoSuchAlgorithmException, NoSuchPaddingException {
         super();
         this.rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         this.sha1Digest = MessageDigest.getInstance("SHA1");
@@ -65,7 +65,7 @@ public class RSASigner extends Signer {
     }
 
     public byte[] sign() throws SignatureException {
-        if (state != RSASigner.SIGN) {
+        if (state != RSAESESigner.SIGN) {
             throw new SignatureException("Need to call initSign before sign");
         }
         try {
@@ -80,7 +80,7 @@ public class RSASigner extends Signer {
     }
 
     public byte[] verify() throws SignatureException {
-        if (state != RSASigner.VERIFY) {
+        if (state != RSAESESigner.VERIFY) {
             throw new SignatureException("Need to call initVerify before verify");
         }
         try {

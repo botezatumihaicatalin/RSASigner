@@ -2,7 +2,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 
 import core.RSACertificateGenerator;
-import core.RSASigner;
+import core.RSAESESigner;
 
 public class Main {
 
@@ -19,7 +19,7 @@ public class Main {
             PublicKey bobPublic = gen.getPublicKey();
             PrivateKey bobPrivate = gen.getPrivateKey();
 
-            RSASigner signer = new RSASigner();
+            RSAESESigner signer = new RSAESESigner();
             signer.initSign(alicePrivate, bobPublic);
             signer.update("My name is what? My name is who? My name is...".getBytes());
             byte[] signed = signer.sign();

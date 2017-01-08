@@ -25,10 +25,14 @@ public class RSACertificateGenerator {
     public RSACertificateGenerator() throws NoSuchAlgorithmException {
         this.keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         this.keyFactory = KeyFactory.getInstance("RSA");
+        this.setKeySize(1024);
+    }
+    
+    public void setKeySize(int keysize) {
+        this.keyPairGenerator.initialize(keysize);
     }
 
     public void generate() {
-        this.keyPairGenerator.initialize(1024);
         KeyPair kp = this.keyPairGenerator.genKeyPair();
         publicKey = kp.getPublic();
         privateKey = kp.getPrivate();
