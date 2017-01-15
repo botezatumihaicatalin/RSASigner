@@ -1,6 +1,7 @@
 package core;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -58,5 +59,21 @@ public abstract class Signer {
         } catch (SignatureException ex) {
             return false;
         }
+    }
+    
+    public void signToFile(String filePath) throws IOException, SignatureException {
+        byte[] data = this.sign();
+        FileOutputStream stream;
+        stream = new FileOutputStream(filePath);
+        stream.write(data);
+        stream.close();
+    }
+    
+    public void verifyToFile(String filePath) throws SignatureException, IOException {
+        byte[] data = this.verify();
+        FileOutputStream stream;
+        stream = new FileOutputStream(filePath);
+        stream.write(data);
+        stream.close();
     }
 }

@@ -3,22 +3,22 @@ package core;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 public class RSACertificateGenerator {
     
-    private PublicKey              publicKey;
-    private PrivateKey             privateKey;
+    private RSAPublicKey           publicKey;
+    private RSAPrivateKey          privateKey;
     private final KeyFactory       keyFactory;
     private final KeyPairGenerator keyPairGenerator;
 
@@ -34,66 +34,57 @@ public class RSACertificateGenerator {
 
     public void generate() {
         KeyPair kp = this.keyPairGenerator.genKeyPair();
-        publicKey = kp.getPublic();
-        privateKey = kp.getPrivate();
+        setPublicKey(kp.getPublic());
+        setPrivateKey(kp.getPrivate());
     }
 
-    public void savePublicKeyToDisk(String folder, String name) throws IOException {
-        Path publicKeyPath = Paths.get(folder, name + ".pub");
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKey.getEncoded());
-        FileOutputStream outputStream = new FileOutputStream(publicKeyPath.toString());
+    public void savePublicKeyToDisk(String pathname) throws IOException {
+        byte[] keyEncoded = publicKey.getEncoded();
+        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyEncoded);
+        FileOutputStream outputStream = new FileOutputStream(pathname);
         outputStream.write(keySpec.getEncoded());
         outputStream.close();
     }
 
-    public void savePrivateKeyToDisk(String folder, String name) throws IOException {
-        Path privateKeyPath = Paths.get(folder, name + ".priv");
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKey.getEncoded());
-        FileOutputStream outputStream = new FileOutputStream(privateKeyPath.toString());
+    public void savePrivateKeyToDisk(String pathname) throws IOException {
+        byte[] keyEncoded = privateKey.getEncoded();
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyEncoded);
+        FileOutputStream outputStream = new FileOutputStream(pathname);
         outputStream.write(keySpec.getEncoded());
         outputStream.close();
     }
 
-    public void loadPublicKeyFromDisk(String folder, String name) throws IOException, InvalidKeySpecException {
-        Path publicKeyPath = Paths.get(folder, name + ".pub");
-        FileInputStream inputStream = new FileInputStream(publicKeyPath.toString());
+    public void loadPublicKeyFromDisk(String pathname) throws IOException, InvalidKeySpecException {
+        FileInputStream inputStream = new FileInputStream(pathname);
         byte[] buffer = new byte[inputStream.available()];
         inputStream.read(buffer);
         inputStream.close();
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(buffer);
-        publicKey = this.keyFactory.generatePublic(keySpec);
+        setPublicKey(this.keyFactory.generatePublic(keySpec));
     }
 
-    public void loadPrivateKeyFromDisk(String folder, String name) throws IOException, InvalidKeySpecException {
-        Path privateKeyPath = Paths.get(folder, name + ".priv");
-        FileInputStream inputStream = new FileInputStream(privateKeyPath.toString());
+    public void loadPrivateKeyFromDisk(String pathname) throws IOException, InvalidKeySpecException {
+        FileInputStream inputStream = new FileInputStream(pathname);
         byte[] buffer = new byte[inputStream.available()];
         inputStream.read(buffer);
         inputStream.close();
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(buffer);
-        privateKey = this.keyFactory.generatePrivate(keySpec);
+        setPrivateKey(this.keyFactory.generatePrivate(keySpec));
+    }
+    
+    private void setPublicKey(PublicKey key) {
+        publicKey = (RSAPublicKey) key;
+    }
+    
+    private void setPrivateKey(PrivateKey key) {
+        privateKey = (RSAPrivateKey) key;
     }
 
-    public void saveToDisk(String folder, String name) throws IOException {
-        this.savePublicKeyToDisk(folder, name);
-        this.savePrivateKeyToDisk(folder, name);
-    }
-
-    public void generateToDisk(String folder, String name) throws IOException {
-        this.generate();
-        this.saveToDisk(folder, name);
-    }
-
-    public void loadFromDisk(String folder, String name) throws InvalidKeySpecException, IOException {
-        this.loadPrivateKeyFromDisk(folder, name);
-        this.loadPublicKeyFromDisk(folder, name);
-    }
-
-    public PublicKey getPublicKey() {
+    public RSAPublicKey getPublicKey() {
         return publicKey;
     }
 
-    public PrivateKey getPrivateKey() {
+    public RSAPrivateKey getPrivateKey() {
         return privateKey;
     }
 }
