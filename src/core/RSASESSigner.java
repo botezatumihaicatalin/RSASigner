@@ -34,8 +34,7 @@ public class RSASESSigner extends RSASigner {
         try {
             byte[] first = this.encrypt(buffer, privateKey);
             byte[] second = this.encrypt(first, publicKey);
-            
-            byte[] hash = this.hash(publicKey.getPublicExponent().toByteArray());
+            byte[] hash = this.hash(buffer);
             byte[] third = ArrayUtils.concat(second, hash);
             return this.encrypt(third, privateKey);
         } catch (Exception er) {
@@ -64,7 +63,9 @@ public class RSASESSigner extends RSASigner {
             byte[] second = this.decrypt(remaining, privateKey);
             byte[] plain = this.decrypt(second, publicKey);
             byte[] plainHash = this.hash(plain);
-            
+            if (!MessageDigest.isEqual(bufferHash, plainHash)) {
+                throw new SignatureException("Hashes don't match.");
+            }
             return plain;
         } catch (Exception er) {
             throw new SignatureException(er.getMessage());
