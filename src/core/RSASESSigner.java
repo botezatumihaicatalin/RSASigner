@@ -43,30 +43,39 @@ public class RSASESSigner extends RSASigner {
     }
 
     @Override
-    public byte[] verify() throws SignatureException {
+    public boolean verify(byte[] signature) throws SignatureException {
         if (state != RSASESSigner.VERIFY) {
             throw new SignatureException("Need to call initVerify before verify");
         }
         try {
             int hashSize = messageDigest.getDigestLength();
-            byte[] first = this.decrypt(buffer, publicKey);
+            byte[] first = this.decrypt(signature, publicKey);
             
             if (first.length < hashSize) {
-                throw new SignatureException("Can't find the hash.");
+                return false;
             }
-            byte[] bufferHash = new byte[hashSize];
-            System.arraycopy(first, first.length - hashSize, bufferHash, 0, hashSize);
+            
+            byte[] bufferHash = this.hash(buffer);
+            byte[] signatureHash = new byte[hashSize];
+            System.arraycopy(first, first.length - hashSize, signatureHash, 0, hashSize);
 
             byte[] remaining = new byte[first.length - hashSize];
             System.arraycopy(first, 0, remaining, 0, first.length - hashSize);
             
             byte[] second = this.decrypt(remaining, privateKey);
             byte[] plain = this.decrypt(second, publicKey);
-            byte[] plainHash = this.hash(plain);
-            if (!MessageDigest.isEqual(bufferHash, plainHash)) {
-                throw new SignatureException("Hashes don't match.");
+            
+            // Check if the signatureHash and the buffer hash are equal.
+            if (!MessageDigest.isEqual(bufferHash, signatureHash)) {
+                return false;
             }
-            return plain;
+            
+            // Check if the buffer is equal to the decrypted plain.
+            if (!MessageDigest.isEqual(buffer, plain)) {
+                return false;
+            }
+            
+            return true;
         } catch (Exception er) {
             throw new SignatureException(er.getMessage());
         }

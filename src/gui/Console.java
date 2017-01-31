@@ -33,38 +33,21 @@ public final class Console {
         }
     }
     
-    private void sign() {
+    private Signer chooseSignature() {
         System.out.println("Choose the method: ");
         System.out.println("1: Encrypt -> Sign -> Encrypt");
         System.out.println("2: Sign -> Encrypt -> Sign");
+        System.out.println("3: Cancel");
         int option = inputScanner.nextInt();
         try {
             if (option == 1) {
-                this.sign(new RSAESESigner());
+                return new RSAESESigner();
             }
             else if (option == 2) {
-                this.sign(new RSASESSigner());
+                return new RSASESSigner();
             }
-            else {
-                throw new Exception("Invalid option!");
-            } 
-        }
-        catch (Exception ex) {
-            System.out.println("Error: " + ex.getMessage());
-        }   
-    }
-    
-    private void verify() {
-        System.out.println("Choose the method: ");
-        System.out.println("1: Encrypt -> Sign -> Encrypt");
-        System.out.println("2: Sign -> Encrypt -> Sign");
-        int option = inputScanner.nextInt();
-        try {
-            if (option == 1) {
-                this.verify(new RSAESESigner());
-            }
-            else if (option == 2) {
-                this.verify(new RSASESSigner());
+            else if (option == 3) {
+                return null;
             }
             else {
                 throw new Exception("Invalid option!");
@@ -73,6 +56,8 @@ public final class Console {
         catch (Exception ex) {
             System.out.println("Error: " + ex.getMessage());
         }
+        
+        return null;
     }
     
     public void start() {
@@ -90,10 +75,10 @@ public final class Console {
                     this.generate();
                 }
                 else if (option == 2) {
-                    this.sign();
+                    this.signFile(this.chooseSignature());
                 }
                 else if (option == 3) {
-                    this.verify();
+                    this.verifyFile(this.chooseSignature());
                 }
                 else if (option == 4) {
                     running = false;
@@ -109,7 +94,10 @@ public final class Console {
         }
     }
     
-    private void sign(Signer signer) {
+    private void signFile(Signer signer) {
+        if (signer == null) {
+            return;
+        }
         try {
             RSACertificateGenerator certGenerator = new RSACertificateGenerator();
             
@@ -126,10 +114,10 @@ public final class Console {
             String inputFilePath = inputScanner.next();
             signer.update(inputFilePath);
             
-            System.out.println("Enter the path for the output signed file: ");
-            String outputFilePath = inputScanner.next();
+            System.out.println("Enter the path for the signature file: ");
+            String signatureFilePath = inputScanner.next();
             
-            signer.signToFile(outputFilePath);
+            signer.signToFile(signatureFilePath);
             System.out.println("Finished signing the file!");
         }
         catch(Exception ex) {
@@ -137,7 +125,10 @@ public final class Console {
         }
     }
     
-    private void verify(Signer signer) {
+    private void verifyFile(Signer signer) {
+        if (signer == null) {
+            return;
+        }
         try {
             RSACertificateGenerator certGenerator = new RSACertificateGenerator();
             
@@ -154,11 +145,16 @@ public final class Console {
             String inputFilePath = inputScanner.next();
             signer.update(inputFilePath);
             
-            System.out.println("Enter the path for the output verified file: ");
-            String outputFilePath = inputScanner.next();
+            System.out.println("Enter the path for the signature file: ");
+            String signatureFilePath = inputScanner.next();
             
-            signer.verifyToFile(outputFilePath);
-            System.out.println("Finished verifying the file!");
+            boolean isValid = signer.verifyFile(signatureFilePath);
+            if (isValid) {
+                System.out.println("The signature for the provided file is valid!");
+            }
+            else {
+                System.out.println("The signature for the provided file is invalid!");
+            }
         }
         catch(Exception ex) {
             System.out.println("Error: " + ex.getMessage());

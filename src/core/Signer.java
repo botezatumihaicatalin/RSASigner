@@ -50,27 +50,18 @@ public abstract class Signer {
 
     public abstract byte[] sign() throws SignatureException;
 
-    public abstract byte[] verify() throws SignatureException;
-
-    public boolean isValid() {
-        try {
-            this.verify();
-            return true;
-        } catch (SignatureException ex) {
-            return false;
-        }
+    public abstract boolean verify(byte[] signature)  throws SignatureException;
+    
+    public boolean verifyFile(String filePath) throws IOException, SignatureException {
+        FileInputStream inputStream = new FileInputStream(filePath);
+        byte[] buffer = new byte[inputStream.available()];
+        inputStream.read(buffer);
+        inputStream.close();
+        return this.verify(buffer);
     }
     
     public void signToFile(String filePath) throws IOException, SignatureException {
         byte[] data = this.sign();
-        FileOutputStream stream;
-        stream = new FileOutputStream(filePath);
-        stream.write(data);
-        stream.close();
-    }
-    
-    public void verifyToFile(String filePath) throws SignatureException, IOException {
-        byte[] data = this.verify();
         FileOutputStream stream;
         stream = new FileOutputStream(filePath);
         stream.write(data);
